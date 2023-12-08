@@ -1,6 +1,6 @@
 use bevy::{prelude::*, input::mouse::MouseWheel};
 
-use crate::{GameState, util::{clamp, Vec3ToVec2, clamp_vec2_by_length}, level_manager::LevelStats, collision::{Collider, is_colliding, is_cords_in_collider}, atom::Atom, neutron::{NEUTRON_SIZE, Neutron, PlacementMarker, spawn_neutron_with_marker}};
+use crate::{GameState, util::{clamp, clamp_vec2_by_length}, level_manager::LevelStats, collision::{Collider, is_colliding, is_cords_in_collider}, atom::Atom, neutron::{NEUTRON_SIZE, Neutron, PlacementMarker, spawn_neutron_with_marker}};
 
 const MAX_ZOOM_OUT: f32 = 10.;
 const MAX_ZOOM_IN: f32 = 0.1;
@@ -102,7 +102,7 @@ pub fn player_place_neutrons(
             for (atom_transform, atom_collider) in &atoms_q {
                 let neutron_collider = Collider::new(NEUTRON_SIZE);
                 
-                if is_colliding((&atom_transform.translation.to_vec2(), atom_collider), (&cursor_pos, &neutron_collider)) {
+                if is_colliding((&atom_transform.translation.xy(), atom_collider), (&cursor_pos, &neutron_collider)) {
                     debug!("Selected position, {}, contains a live atom!", cursor_pos);
                     return;
                 }
@@ -116,7 +116,7 @@ pub fn player_place_neutrons(
             let (marked_neutron_entity, marked_neutron_transform, mut marked_neutron) = placement_neutron_q.single_mut();
                 
             commands.entity(marked_neutron_entity).remove::<PlacementMarker>().despawn_descendants();
-            marked_neutron.velocity = clamp_vec2_by_length((cursor_pos - marked_neutron_transform.translation.to_vec2()) * 7.5, 0.1, 1500.);
+            marked_neutron.velocity = clamp_vec2_by_length((cursor_pos - marked_neutron_transform.translation.xy()) * 7.5, 0.1, 1500.);
                 
             level_stats.num_neutrons -= 1;
             next_placement_state.set(PlacementState::NEUTRON);
@@ -124,7 +124,7 @@ pub fn player_place_neutrons(
             debug!(
                 "Set velocity of {} for neutron at {}, remaining placeable neutrons: {}", 
                 marked_neutron.velocity, 
-                marked_neutron_transform.translation.to_vec2(), 
+                marked_neutron_transform.translation.xy(), 
                 level_stats.num_neutrons
             );
         }
@@ -152,7 +152,7 @@ pub fn player_remove_neutron(
         .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor)) {
         
         for (neutron_entity, neutron_transform, neutron_collider) in &placement_neutron_q {
-            if !is_cords_in_collider(cursor_pos, neutron_transform.translation.to_vec2(), neutron_collider) {
+            if !is_cords_in_collider(cursor_pos, neutron_transform.translation.xy(), neutron_collider) {
                 continue;
             }
             
@@ -164,7 +164,7 @@ pub fn player_remove_neutron(
                 next_placement_state.set(PlacementState::NEUTRON);
             }
 
-            debug!("Removed neutron at {}, Remaining placeable neutrons: {}", neutron_transform.translation.to_vec2(), level_stats.num_neutrons);
+            debug!("Removed neutron at {}, Remaining placeable neutrons: {}", neutron_transform.translation.xy(), level_stats.num_neutrons);
             return;
         }
     }

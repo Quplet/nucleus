@@ -1,8 +1,5 @@
 use bevy::prelude::*;
 
-pub trait Vec3ToVec2 {
-    fn to_vec2(&self) -> Vec2;
-}
 
 pub fn clamp<T>(input: T, min: T, max: T) -> T
 where T: PartialOrd<T> {
@@ -29,10 +26,4 @@ pub fn clamp_vec2_by_length(input: Vec2, min: f32, max: f32) -> Vec2 {
     }
     
     input
-}
-
-impl Vec3ToVec2 for Vec3 {
-    fn to_vec2(&self) -> Vec2 {
-        Vec2::from((self.x, self.y))
-    }
 }

@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
-use crate::{collision::*, GameStats, util::Vec3ToVec2};
+use crate::{collision::*, GameStats};
 
 pub const NEUTRON_SIZE: f32 = 10.;
 const NEUTRON_COLOR: Color = Color::rgb(0.3, 0.3, 1.0);
@@ -106,7 +106,7 @@ pub fn pointer_follow_cursor(
             }
 
             let pointer_rotation = pointer_transform.rotation.normalize();
-            let cursor_distance = cursor_pos - pointer_global_transform.translation().to_vec2();
+            let cursor_distance = cursor_pos - pointer_global_transform.translation().xy();
 
             if cursor_distance.length() < f32::EPSILON {
                 return;
@@ -119,6 +119,8 @@ pub fn pointer_follow_cursor(
             if rotation_ammount.abs() < f32::EPSILON {
                 return;
             }
+
+            println!("Cursor angle: {}, rotation_ammount: {}", cursor_angle, rotation_ammount);
 
             pointer_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_z(rotation_ammount));
         }
