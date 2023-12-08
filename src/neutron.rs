@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
-use crate::{collision::*, GameStats};
+use crate::{collision::*, GameStats, util::Vec3ToVec2};
 
 pub const NEUTRON_SIZE: f32 = 10.;
 const NEUTRON_COLOR: Color = Color::rgb(0.3, 0.3, 1.0);
@@ -15,8 +15,10 @@ pub struct Neutron {
 #[derive(Component)]
 pub struct PlacementMarker;
 
-#[derive(Component)]
-pub struct PlacementPointer;
+#[derive(Component, Default)]
+pub struct PlacementPointer {
+    set_vel: bool
+}
 
 pub fn neutron_motion(
     mut neutrons: Query<(&mut Transform, &Neutron)>,
@@ -72,22 +74,55 @@ pub fn spawn_neutron_with_marker(
     )).with_children(|parent| {
         parent.spawn((
             MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Cylinder {
-                    radius: NEUTRON_SIZE / 2.,
-                    height: NEUTRON_SIZE * 5.0,
-                    resolution: 20,
-                    segments: 10
-                }.into()).into(),
+                mesh: meshes.add(shape::Quad { size: Vec2::new(40., NEUTRON_SIZE/2.), flip: false }.into()).into(),
                 material: materials.add(ColorMaterial::from(Color::WHITE)),
                 transform: Transform {
-                    translation: Vec3::from((0., 20., -1.)),
+                    translation: Vec3::new(20., 0., -1.),
                     ..default()
                 },
                 ..default()
             },
-            PlacementPointer
+            PlacementPointer::default()
         ));
     });
+}
+
+/*
+    TODO: fix: Really bugs out when rotating clockwise
+*/
+pub fn pointer_follow_cursor(
+    window_q: Query<&Window>,
+    camera_q: Query<(&Camera, &GlobalTransform)>,
+    mut pointer_q: Query<(&mut Transform, &GlobalTransform, &PlacementPointer)>
+) {
+    let window = window_q.single();
+    let (camera, camera_transform) = camera_q.single();
+
+    if let Some(cursor_pos) = window.cursor_position()
+    .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor)) {
+        for (mut pointer_transform, pointer_global_transform, placement_pointer) in &mut pointer_q {
+            if placement_pointer.set_vel {
+                continue;
+            }
+
+            let pointer_rotation = pointer_transform.rotation.normalize();
+            let cursor_distance = cursor_pos - pointer_global_transform.translation().to_vec2();
+
+            if cursor_distance.length() < f32::EPSILON {
+                return;
+            }
+
+            let cursor_angle = cursor_distance.y.atan2(cursor_distance.x);
+
+            let rotation_ammount = pointer_rotation.angle_between(Quat::from_rotation_z(cursor_angle).normalize());
+
+            if rotation_ammount.abs() < f32::EPSILON {
+                return;
+            }
+
+            pointer_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_z(rotation_ammount));
+        }
+    }
 }
 
 pub fn calculate_split_trajectories(neutron_velocity: Vec2, num_split: i32) -> Option<Vec<Vec2>> {

@@ -5,6 +5,7 @@ use level_manager::setup_level;
 use bevy::prelude::*;
 use bevy::log::*;
 use neutron::neutron_motion;
+use neutron::pointer_follow_cursor;
 use player_controls::*;
 
 mod atom;
@@ -70,7 +71,7 @@ fn main() {
     
     .add_systems(OnEnter(GameState::SETUP), setup_level)
     
-    .add_systems(Update, (player_end_setup, player_place_neutrons, player_remove_neutron).run_if(in_state(GameState::SETUP)))
+    .add_systems(Update, (player_end_setup, player_place_neutrons, player_remove_neutron, pointer_follow_cursor).run_if(in_state(GameState::SETUP)))
     .add_systems(Update, (neutron_motion, atom_collision, collision_listener).run_if(in_state(GameState::GAME)))
     .add_systems(Update, (camera_zoom, camera_movement).run_if(in_state(GameState::GAME).or_else(in_state(GameState::SETUP))))
 
