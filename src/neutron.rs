@@ -88,41 +88,41 @@ pub fn spawn_neutron_with_marker(
 }
 
 /*
-    TODO: fix: Really bugs out when rotating clockwise
+    a lot taken https://github.com/bevyengine/bevy/blob/main/examples/2d/rotation.rs
 */
 pub fn pointer_follow_cursor(
     window_q: Query<&Window>,
     camera_q: Query<(&Camera, &GlobalTransform)>,
-    mut pointer_q: Query<(&mut Transform, &GlobalTransform, &PlacementPointer)>
+    mut pointer_q: Query<(&mut Transform, &PlacementPointer, &Parent)>,
+    parent_q: Query<&GlobalTransform, (With<Neutron>, With<PlacementMarker>)>
 ) {
     let window = window_q.single();
     let (camera, camera_transform) = camera_q.single();
 
     if let Some(cursor_pos) = window.cursor_position()
     .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor)) {
-        for (mut pointer_transform, pointer_global_transform, placement_pointer) in &mut pointer_q {
+        for (mut pointer_transform, placement_pointer, pointer_parent) in &mut pointer_q {
             if placement_pointer.set_vel {
                 continue;
             }
 
-            let pointer_rotation = pointer_transform.rotation.normalize();
-            let cursor_distance = cursor_pos - pointer_global_transform.translation().xy();
+            // unwrap, if there is a parent in the q that doesn't have this something has gone horribly wrong.
+            let parent_global_transform = parent_q.get(pointer_parent.get()).unwrap(); 
 
-            if cursor_distance.length() < f32::EPSILON {
+            let to_cursor = cursor_pos - parent_global_transform.translation().xy();
+
+            if to_cursor.length() < f32::EPSILON {
                 return;
             }
 
-            let cursor_angle = cursor_distance.y.atan2(cursor_distance.x);
+            let pointer_right = (pointer_transform.rotation * Vec3::Y).xy();
+            let rotation_angle = pointer_right.dot(to_cursor.normalize());
 
-            let rotation_ammount = pointer_rotation.angle_between(Quat::from_rotation_z(cursor_angle).normalize());
-
-            if rotation_ammount.abs() < f32::EPSILON {
+            if rotation_angle.abs() < f32::EPSILON {
                 return;
             }
 
-            println!("Cursor angle: {}, rotation_ammount: {}", cursor_angle, rotation_ammount);
-
-            pointer_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_z(rotation_ammount));
+            pointer_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_z(rotation_angle));
         }
     }
 }
