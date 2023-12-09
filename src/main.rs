@@ -4,7 +4,7 @@ use collision::CollisionEvent;
 use collision::collision_listener;
 use hud::hud_cleanup;
 use hud::hud_setup;
-use hud::text_update;
+use hud::hud_text_update;
 use level_manager::setup_level;
 use bevy::prelude::*;
 use bevy::log::*;
@@ -79,7 +79,7 @@ fn main() {
     
     .add_systems(Update, (player_end_setup, player_place_neutrons, player_remove_neutron, pointer_follow_cursor).run_if(in_state(GameState::SETUP)))
     .add_systems(Update, (neutron_motion, atom_collision, collision_listener).run_if(in_state(GameState::GAME)))
-    .add_systems(Update, (camera_zoom, camera_movement, text_update).run_if(in_state(GameState::GAME).or_else(in_state(GameState::SETUP))))
+    .add_systems(Update, (camera_zoom, camera_movement, hud_text_update).run_if(in_state(GameState::GAME).or_else(in_state(GameState::SETUP))))
 
     .run();
 }

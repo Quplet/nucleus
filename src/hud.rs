@@ -4,6 +4,8 @@
 
 use bevy::{prelude::*, diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}};
 
+use crate::{GameStats, level_manager::LevelStats};
+
 #[derive(Component)]
 pub struct Hud;
 
@@ -13,35 +15,59 @@ pub struct FpsText;
 #[derive(Component)]
 pub struct GameStatsText;
 
-const FPS_TEXT_SIZE: f32 = 20.;
+const HUD_TEXT_SIZE: f32 = 20.;
 
 pub fn hud_setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>
 ) {
-    let font = asset_server.load("fonts/JetBrainsMono-Regular.ttf");
+    let static_text_style = TextStyle {
+        font: asset_server.load("fonts/JetBrainsMono-Regular.ttf"),
+        font_size: HUD_TEXT_SIZE,
+        ..default()
+    };
+    let variable_text_style = TextStyle {
+        font: static_text_style.font.clone(),
+        font_size: HUD_TEXT_SIZE,
+        color: Color::ORANGE,
+        ..default()
+    };
 
+    // Fps ui
     commands.spawn((
         TextBundle::from_sections([
-            TextSection::new(
-                "FPS: ",
-                TextStyle { 
-                    font: font.clone(), 
-                    font_size: FPS_TEXT_SIZE, 
-                    ..default()
-                }
-            ),
-            TextSection::from_style(
-                TextStyle { 
-                    font: font, 
-                    font_size: FPS_TEXT_SIZE, 
-                    color: Color::ORANGE 
-                }
-            )
-        ]),
+            TextSection::new("FPS: ", static_text_style.clone()),
+            TextSection::from_style(variable_text_style.clone())
+        ]).with_style(
+            Style {
+                position_type: PositionType::Absolute,
+                top: Val::Px(5.),
+                right: Val::Px(5.),
+                ..default()
+            }
+        ),
         Hud,
         FpsText
     ));
+
+    commands.spawn((
+        TextBundle::from_sections([
+            TextSection::new("Energy: ", static_text_style.clone()),
+            TextSection::from_style(variable_text_style.clone()),
+            TextSection::new("\nRemaining Neutrons: ", static_text_style.clone()),
+            TextSection::from_style(variable_text_style.clone())
+        ]).with_style(
+            Style {
+                position_type: PositionType::Absolute,
+                top: Val::Px(5.),
+                left: Val::Px(5.),
+                ..default()
+            }
+        ),
+        Hud,
+        GameStatsText
+    ));
+
 }
 
 pub fn hud_cleanup(
@@ -51,15 +77,22 @@ pub fn hud_cleanup(
     hud_q.for_each(|hud_entity| commands.entity(hud_entity).despawn());
 }
 
-pub fn text_update(
+pub fn hud_text_update(
     diagnostics: Res<DiagnosticsStore>,
-    mut fps_text_q: Query<&mut Text, With<FpsText>>
+    mut fps_text_q: Query<&mut Text, (With<FpsText>, Without<GameStatsText>)>,
+    mut game_stats_text_q: Query<&mut Text, (With<GameStatsText>, Without<FpsText>)>,
+    game_stats: Res<GameStats>,
+    level_stats: Res<LevelStats>
 ) {
     let mut fps_text = fps_text_q.single_mut();
+    let mut game_stats_text = game_stats_text_q.single_mut();
 
     if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
         if let Some(smoothed_fps) = fps.smoothed() {
-            fps_text.sections[1].value = format!("{smoothed_fps:.2}");
+            fps_text.sections[1].value = format!("{smoothed_fps:.0}");
         }
     }
+
+    game_stats_text.sections[1].value = format!("{} J", game_stats.score);
+    game_stats_text.sections[3].value = format!("{}", level_stats.num_neutrons);
 }
