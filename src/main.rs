@@ -1,6 +1,10 @@
 use atom::atom_collision;
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use collision::CollisionEvent;
 use collision::collision_listener;
+use hud::hud_cleanup;
+use hud::hud_setup;
+use hud::text_update;
 use level_manager::setup_level;
 use bevy::prelude::*;
 use bevy::log::*;
@@ -14,6 +18,7 @@ pub mod collision;
 mod player_controls;
 mod level_manager;
 mod util;
+mod hud;
 
 const ENERGY_RELEASED: f64 = 3.2e-11;
 
@@ -45,7 +50,7 @@ fn main_setup(mut commands: Commands) {
 
 fn main() {
     App::new()
-    .add_plugins(DefaultPlugins.set(WindowPlugin {
+    .add_plugins((DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
             title: "Nucleus".into(),
             ..default()
@@ -55,7 +60,7 @@ fn main() {
         // uncomment to change log levels
         level: Level::DEBUG,
         ..default()
-    }))
+    }), FrameTimeDiagnosticsPlugin))
 
     .add_state::<GameState>()
     .add_state::<PlacementState>()
@@ -69,11 +74,12 @@ fn main() {
 
     .add_systems(Startup, main_setup)
     
-    .add_systems(OnEnter(GameState::SETUP), setup_level)
+    .add_systems(OnEnter(GameState::SETUP), (setup_level, hud_setup))
+    .add_systems(OnExit(GameState::GAME), hud_cleanup)
     
     .add_systems(Update, (player_end_setup, player_place_neutrons, player_remove_neutron, pointer_follow_cursor).run_if(in_state(GameState::SETUP)))
     .add_systems(Update, (neutron_motion, atom_collision, collision_listener).run_if(in_state(GameState::GAME)))
-    .add_systems(Update, (camera_zoom, camera_movement).run_if(in_state(GameState::GAME).or_else(in_state(GameState::SETUP))))
+    .add_systems(Update, (camera_zoom, camera_movement, text_update).run_if(in_state(GameState::GAME).or_else(in_state(GameState::SETUP))))
 
     .run();
 }
