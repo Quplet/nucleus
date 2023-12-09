@@ -156,7 +156,7 @@ pub fn player_remove_neutron(
                 continue;
             }
             
-            commands.entity(neutron_entity).despawn();
+            commands.entity(neutron_entity).despawn_recursive();
             
             if placement_state.get().eq(&PlacementState::NEUTRON) {
                 level_stats.num_neutrons += 1;
