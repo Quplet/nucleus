@@ -48,9 +48,9 @@ pub fn collision_listener(
 }
 
 pub fn is_colliding(pair1: (&Vec2, &Collider), pair2: (&Vec2, &Collider)) -> bool {
-    (pair1.0.to_owned() - pair2.0.to_owned()).length() < pair1.1.radius + pair2.1.radius
+    (pair1.0.to_owned() - pair2.0.to_owned()).length_squared() < (pair1.1.radius + pair2.1.radius).powi(2)
 }
 
 pub fn is_cords_in_collider(cords: Vec2, collider_pos: Vec2, collider: &Collider) -> bool {
-    (collider_pos - cords).length() < collider.radius
+    (collider_pos - cords).length_squared() < collider.radius.powi(2)
 }
