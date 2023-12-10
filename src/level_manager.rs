@@ -11,7 +11,7 @@ pub struct Level {
 #[derive(Resource, Debug)]
 pub struct LevelStats {
     pub num_neutrons: i32,
-    pub passing_score: f64
+    pub s_score: f64
 }
 
 pub fn setup_level(
@@ -29,13 +29,25 @@ pub fn setup_level(
     }
 }
 
+pub fn calculate_grade(score: f64, level_stats: &LevelStats) -> &'static str {
+    let letters = ["S", "A", "B", "C", "D"];
+
+    for i in 0..letters.len() {
+        if score + f64::EPSILON >= level_stats.s_score * 0.5 + level_stats.s_score * 1./(2. + i as f64) {
+            return letters[i];
+        }
+    }
+
+    "F"
+}
+
 fn get_level(level: i32) -> Option<Level> {
     match level {
         0 => {
             Some(Level {
                 //level: 0,
                 atoms: vec![(3, Vec2::from((0., 0.)))],
-                level_stats: LevelStats { num_neutrons: 1, passing_score: 3.2e-11 }
+                level_stats: LevelStats { num_neutrons: 1, s_score: 3.2e-11 }
             })
         }
         _ => { None }

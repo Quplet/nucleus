@@ -4,7 +4,7 @@
 
 use bevy::{prelude::*, diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}};
 
-use crate::{GameStats, level_manager::LevelStats};
+use crate::{GameStats, level_manager::{LevelStats, calculate_grade}};
 
 #[derive(Component)]
 pub struct Hud;
@@ -54,6 +54,8 @@ pub fn hud_setup(
         TextBundle::from_sections([
             TextSection::new("Energy: ", static_text_style.clone()),
             TextSection::from_style(variable_text_style.clone()),
+            TextSection::new("\nEnergy Grade: ", static_text_style.clone()),
+            TextSection::from_style(variable_text_style.clone()),
             TextSection::new("\nRemaining Neutrons: ", static_text_style.clone()),
             TextSection::from_style(variable_text_style.clone())
         ]).with_style(
@@ -94,5 +96,6 @@ pub fn hud_text_update(
     }
 
     game_stats_text.sections[1].value = format!("{} J", game_stats.score);
-    game_stats_text.sections[3].value = format!("{}", level_stats.num_neutrons);
+    game_stats_text.sections[3].value = format!("{}", calculate_grade(game_stats.score, level_stats.as_ref()));
+    game_stats_text.sections[5].value = format!("{}", level_stats.num_neutrons);
 }
