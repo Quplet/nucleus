@@ -12,3 +12,4 @@ This was my first project made in Bevy.
 4. Space to begin the simulation.
 
 You can right click an already placed neutron to pick it back up.
+You can zoom in and out with the scroll wheel and move the camera with WASD.
