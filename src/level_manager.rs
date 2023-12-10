@@ -46,8 +46,8 @@ fn get_level(level: i32) -> Option<Level> {
         0 => {
             Some(Level {
                 //level: 0,
-                atoms: vec![(3, Vec2::from((0., 0.)))],
-                level_stats: LevelStats { num_neutrons: 1, s_score: 3.2e-11 }
+                atoms: vec![(2, Vec2::new(0., 0.)), (3, Vec2::new(-100., 100.)), (3, Vec2::new(100., 100.))],
+                level_stats: LevelStats { num_neutrons: 1, s_score: 3.2e-11 * 3. }
             })
         }
         _ => { None }
