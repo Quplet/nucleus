@@ -197,3 +197,10 @@ pub fn calculate_split_trajectories(neutron_velocity: Vec2, num_split: i32) -> O
 
     Some(vec)
 }
+
+pub fn neutron_cleanup(
+    mut commands: Commands,
+    neutron_q: Query<Entity, With<Neutron>>
+) {
+    neutron_q.for_each(|neutron_entity| commands.entity(neutron_entity).despawn_recursive());
+}

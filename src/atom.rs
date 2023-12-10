@@ -10,7 +10,8 @@ pub struct Atom {
 }
 
 pub fn spawn_atom(
-    commands: &mut Commands, 
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
     meshes: &mut ResMut<Assets<Mesh>>, 
     materials: &mut ResMut<Assets<ColorMaterial>>,
     position: Vec2,
@@ -25,7 +26,20 @@ pub fn spawn_atom(
         },
         Atom { num_neutrons: num_neutron },
         Collider { radius: ATOM_SIZE * 0.75 }
-    ));
+    ))
+    .with_children(|parent| {
+        parent.spawn(Text2dBundle {
+            text: Text::from_section(
+                format!("{num_neutron}"), 
+                TextStyle { font: asset_server.load("fonts/JetBrainsMono-Regular.ttf"), font_size: 32., color: Color::BLACK }
+            ),
+            transform: Transform {
+                translation: Vec3::new(0., 0., 2.1),
+                ..default()
+            },
+            ..default()
+        });
+    });
 }
 
 pub fn atom_collision(
@@ -43,7 +57,7 @@ pub fn atom_collision(
             }
 
             par_commands.command_scope(| mut commands | {
-                commands.entity(atom_entity).despawn();
+                commands.entity(atom_entity).despawn_recursive();
                 commands.entity(neutron_entity).despawn();
 
                 let neutron_velocity = neutron.velocity;
@@ -61,5 +75,12 @@ pub fn atom_collision(
             return;
         }
     });
+}
+
+pub fn atom_cleanup(
+    mut commands: Commands,
+    atom_q: Query<Entity, With<Atom>>
+) {
+    atom_q.for_each(|atom_entity| commands.entity(atom_entity).despawn_recursive());
 }
 

@@ -4,7 +4,7 @@
 
 use bevy::{prelude::*, diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}};
 
-use crate::{GameStats, level_manager::{LevelStats, calculate_grade}};
+use crate::{GameStats, level_manager::{LevelStats, calculate_grade}, menu::{PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON}, GameState};
 
 #[derive(Component)]
 pub struct Hud;
@@ -71,14 +71,47 @@ pub fn hud_setup(
         Hud,
         GameStatsText
     ));
+}
 
+pub fn setup_reset_button(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>
+) {
+
+    let variable_text_style = TextStyle {
+        font: asset_server.load("fonts/JetBrainsMono-Regular.ttf"),
+        font_size: HUD_TEXT_SIZE,
+        color: Color::ORANGE,
+        ..default()
+    };
+
+    commands.spawn((
+        ButtonBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                right: Val::Px(5.),
+                bottom: Val::Px(5.),
+                width: Val::Px(75.),
+                height: Val::Px(50.),
+                border: UiRect::all(Val::Px(2.)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            border_color: Color::ORANGE.into(),
+            ..default()
+        },
+        Hud
+    )).with_children(|parent| {
+        parent.spawn(TextBundle::from_section("Reset", variable_text_style));
+    });
 }
 
 pub fn hud_cleanup(
     mut commands: Commands,
     hud_q: Query<Entity, With<Hud>>
 ) {
-    hud_q.for_each(|hud_entity| commands.entity(hud_entity).despawn());
+    hud_q.for_each(|hud_entity| commands.entity(hud_entity).despawn_recursive());
 }
 
 pub fn hud_text_update(
@@ -97,8 +130,28 @@ pub fn hud_text_update(
         }
     }
 
-    game_stats_text.sections[1].value = format!("{} J", game_stats.score);
+    game_stats_text.sections[1].value = format!("{:.12} J", game_stats.score);
     game_stats_text.sections[3].value = format!("{}", calculate_grade(game_stats.score, level_stats.as_ref()));
     game_stats_text.sections[5].value = format!("{}", level_stats.num_neutrons);
     game_stats_text.sections[7].value = format!("{:.2}", game_stats.simulation_speed);
+}
+
+pub fn reset_button(
+    mut interaction_q: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<Button>, With<Hud>)>,
+    mut next_state: ResMut<NextState<GameState>>
+) {
+    for (interaction, mut bg_color) in &mut interaction_q {
+        match *interaction {
+            Interaction::Pressed => {
+                *bg_color = PRESSED_BUTTON.into();
+                next_state.set(GameState::SETUP);
+            }
+            Interaction::Hovered => {
+                *bg_color = HOVERED_BUTTON.into();
+            },
+            Interaction::None => {
+                *bg_color = NORMAL_BUTTON.into();
+            }
+        }
+    }
 }
