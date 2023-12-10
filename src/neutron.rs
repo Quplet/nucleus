@@ -6,6 +6,7 @@ use crate::{collision::*, GameStats};
 
 pub const NEUTRON_SIZE: f32 = 10.;
 const NEUTRON_COLOR: Color = Color::rgb(0.3, 0.3, 1.0);
+const NEUTRON_MAX_DISTANCE_SQUARED: f32 = 1e9;
 
 #[derive(Component, Debug, Clone)]
 pub struct Neutron {
@@ -21,11 +22,17 @@ pub struct PlacementPointer {
 }
 
 pub fn neutron_motion(
-    mut neutrons: Query<(&mut Transform, &Neutron)>,
+    par_commands: ParallelCommands,
+    mut neutrons: Query<(Entity, &mut Transform, &Neutron)>,
     time: Res<Time>,
     game_stats: Res<GameStats>
 ) {
-    neutrons.par_iter_mut().for_each(|(mut neutron_transform, neutron)| {
+    neutrons.par_iter_mut().for_each(|(neutron_entity, mut neutron_transform, neutron)| {
+        if neutron_transform.translation.xy().length_squared() > NEUTRON_MAX_DISTANCE_SQUARED {
+            par_commands.command_scope(|mut commands| commands.entity(neutron_entity).despawn());
+            return;
+        }
+
         neutron_transform.translation += Vec3::from((neutron.velocity * time.delta_seconds() * game_stats.simulation_speed, 0.));
     });
 }
